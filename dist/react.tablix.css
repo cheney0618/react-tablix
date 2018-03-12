@@ -1,0 +1,24 @@
+.react-tablix {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+.react-tablix td,
+.react-tablix th {
+  border: 1px solid #bfbfbf;
+  font-size: 12px;
+  font-weight: normal;
+  padding: 2px 4px;
+  text-align: center;
+}
+.react-tablix th {
+  background-color: #bae7ff;
+}
+.react-tablix .center {
+  text-align: center;
+}
+.react-tablix .left {
+  text-align: center;
+}
+.react-tablix .right {
+  text-align: center;
+}

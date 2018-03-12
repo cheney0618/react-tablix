@@ -1,7 +1,7 @@
 {
   "name": "react-tablix",
   "version": "1.0.0",
-  "description": "",
+  "description": "REACT TABLIX",
   "main": "dist/react.tablix.js",
   "scripts": {
     "build": "webpack --mode production",

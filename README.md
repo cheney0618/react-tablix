@@ -1,79 +1,90 @@
 
 # TABLIX
 
+Tablix is the conversion of two-dimensional data into complex matrix table.
+
+eg:
+
+from:
+
+id|school|grade|gradeID|schoolClass|scID|course|cid|score|std|teacher|gradeYear|gid
+---|---|---|---|---|---|---|---|---|---|---|---|---
+1|沙子小学|2019级|1|一班|1|语文|1|100|1.1657564|张洋|2017|1
+2|沙子小学|2019级|1|一班|1|语文|1|50|1.1657564|张洋|2017|1
+3|沙子小学|2019级|1|一班|1|语文|1|86|1.3|张张|2018|2
+4|沙子小学|2019级|1|一班|1|数学|2|79|1.2|冯大毛|2017|1
+5|沙子小学|2019级|1|二班|2|语文|1|92|2.1|张洋|2017|1
+6|沙子小学|2019级|1|二班|2|数学|2|98|1.5|李四|2017|1
+7|沙子小学|2018级|2|一班|2|语文|1|85|2.1|刘伟|2017|1
+
+
+to:
+
 <img src='sample/sample.jpg' />
 
-## 配置
+## Properties
+
+### rowGroup
+
+object
+
+**required**
 
 ```
 {
-    // 行组
-    rowGroup: {
-        field: 'field_name',
+    field: 'field_name',
+    sort: (a,b) => {},
+
+    // option
+    group: {
+        
+    }
+}
+```
+
+### columns
+
+array
+
+**required**
+
+```
+[
+    {
+        field: 'file_name',
+        name: 'show name',
+        rowSpan: 3, 
         sort: (a,b) => {},
-        // 嵌套组可选
-        group: {
-            
-        }
+        style: '',
+        className: '',
+        render: (value, rowData) => {}
     },
-    // 列及列组
-    columns: [
-        {
-            field: 'file_name',
-            name: 'show name',
-            rowSpan: 3,         // 根据所有头部行数计算
+    {
+        // top group
+        group: {
+            field: 'field_name',
             sort: (a,b) => {},
-            style: '',
-            className: '',
-            render: (value, rowData) => {}
-        },
-        {
-            // 最顶层列组
-            group: {
-                field: 'field_name',
-                sort: (a,b) => {},
-                columns: [
-                    // 分组列，可嵌套
-                    {
-                        group: { 
-                            field: 'field_name',
-                            sort: (a,b) => {},
-                            columns: [
-                                {
-                                    field: 'field_name',
-                                    name: 'show name',
-                                    sort: (a,b) => {},
-                                    style: '',
-                                    className: '',
-                                    aggregate: Tablix.AGGREGATE_TYPE.AVG,
-                                    render: (value, rowData) => {}
-                                }
-                            ]
-                        }
-                    },
-                    // 普通列
-                    {
-                        name: 'show name',
+            columns: [
+                {
+                    group: { 
+                        field: 'field_name',
+                        sort: (a,b) => {},
                         columns: [
                             {
                                 field: 'field_name',
-                                name: '',
-                            },
-                            {
-                                field: 'field_name',
-                                name: '',
+                                name: 'show name',
+                                sort: (a,b) => {},
+                                style: '',
+                                className: '',
+                                aggregate: Tablix.AGGREGATE_TYPE.AVG,
+                                render: (value, rowData) => {}
                             }
                         ]
                     }
-                ]
-            }
-        },
-        {
-            name: 'show text',
-            rowSpan: 2, 
-            columns: [              // 解决多行合并错位，多增加一层columns，可根据情况调整
+                },
+                // normal column
                 {
-                    rowSpan: 0,     // 表示本行不显示，用于解决多行合并错位
+                    name: 'show name',
                     columns: [
                         {
                             field: 'field_name',
@@ -87,39 +98,67 @@
                 }
             ]
         }
-    ],
-    // 二维表格数据
-    data: [
-        {
-            field_name1: value，
-            field_name2: value，
-            field_name3: value，
-            field_name4: value，
+    },
+    {
+        name: 'show text',
+        rowSpan: 2, 
+        columns: [              // To solve multi-line merge mismatch, add a layer of columns, which can be adjusted according to the situation.
+            {
+                rowSpan: 0,     // 0 don't build cell
+                    columns: [
+                        {
+                            field: 'field_name',
+                            name: '',
+                        },
+                        {
+                            field: 'field_name',
+                            name: '',
+                        }
+                    ]
+                }
+            ]
         }
-    ],
-    style: {},              // table style
-    className: '',          // table class
-}
-
+    ]
 ```
 
-## 聚合函数
+### data
 
-**聚合函数只能用于明细列，并设置了field的列**
+array
 
-### 支持的聚合函数
+**required**
 
-> Tablix.AGGREGATE_TYPE
+```
+[
+    {
+        field_name1: value，
+        field_name2: value，
+        field_name3: value，
+        field_name4: value，
+    }
+]
+```
 
-- AVG 平均值
-- SUM 求和
-- COUNT 计数
-- MAX 最大值
-- MIN 最小值
-- FIRST 第一个值，默认聚合函数
-- LAST 最后一个值
+### style
 
-## 用法
+
+### className
+
+
+## Aggregate Function
+
+**just use detail column, and have set field column**
+
+### Tablix.AGGREGATE_TYPE
+
+- FIRST this is default
+- LAST
+- AVG 
+- SUM
+- COUNT
+- MAX
+- MIN
+
+## Usage
 
 ```
 import React from 'react';

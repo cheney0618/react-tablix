@@ -34,13 +34,13 @@ class Tablix extends React.Component {
         // 生成分组头数据
         const gc = group => {
             let gs = [];
-            const { field, columns, sort } = group;
+            const { by, columns, sort, ...resetGroup } = group;
             let dd = data;
             if (typeof sort == 'function') {
                 dd = dd.sort(sort);
             }
             dd.forEach(d => {
-                let k = d[field];
+                let k = d[by];
                 if (!gs.includes(k)) {
                     gs.push(k);
                 }
@@ -49,12 +49,13 @@ class Tablix extends React.Component {
             if (columns) {
                 return gs.map(name => ({
                     name,
-                    field,
-                    columns: cc(columns)
+                    by,
+                    columns: cc(columns),
+                    ...resetGroup
                 }));
             }
             else {
-                return gs.map(name => ({ name, field }));
+                return gs.map(name => ({ name, by, ...resetGroup }));
             }
         }
 
@@ -106,7 +107,7 @@ class Tablix extends React.Component {
         }
 
         buildColSpan(ec);
-
+        console.log('ec', ec)
         return ec;
     }
 
@@ -118,10 +119,10 @@ class Tablix extends React.Component {
             for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
                 if (col.columns) {
-                    wh(col.columns, w.concat([{ field: col.field, name: col.name }]));
+                    wh(col.columns, w.concat([{ field: col.by ? col.by : col.field, name: col.name }]));
                 }
                 else {
-                    cols.push({ ...col, where: w });
+                    cols.push({ ...col, where: col.by ? w.concat([{ field: col.by, name: col.name }]) : w });
                 }
             }
         }
@@ -132,16 +133,16 @@ class Tablix extends React.Component {
             const col = ec[i];
             if (col.columns) {
                 let w = [];
-                if (col.field) {
-                    w = [{ field: col.field, name: col.name }];
+                if (col.field || col.by) {
+                    w = [{ field: col.by ? col.by : col.field, name: col.name }];
                 }
                 wh(col.columns, w);
             }
             else {
-                cols.push(col);
+                cols.push({...col, where: col.by ? [{ field: col.by, name: col.name }] : null});
             }
         }
-
+        console.log('cols', cols)
         return cols;
     }
 
@@ -155,7 +156,7 @@ class Tablix extends React.Component {
         }
 
         const buildHierarchy = (g, wh) => {
-            const { field, group, sort } = g;
+            const { by, group, sort } = g;
             let dd = data;
             wh.forEach(w => {
                 dd = dd.filter(t => t[w.field] == w.name);
@@ -167,19 +168,19 @@ class Tablix extends React.Component {
 
             let gs = [];
             dd.forEach(t => {
-                if (!gs.includes(t[field])) {
-                    gs.push(t[field]);
+                if (!gs.includes(t[by])) {
+                    gs.push(t[by]);
                 }
             });
 
             return gs.map(name => {
                 let g = {
-                    field,
+                    by,
                     name,
-                    where: wh.concat([{ field, name }])
+                    where: wh.concat([{ field: by, name }])
                 };
                 if (group) {
-                    g.members = buildHierarchy(group, wh.concat([{ field, name }]));
+                    g.members = buildHierarchy(group, wh.concat([{ field: by, name }]));
                 }
 
                 return g;
@@ -203,7 +204,7 @@ class Tablix extends React.Component {
         }
 
         buildRowSpan(rows);
-
+        console.log('rh', rows)
         return rows;
     }
 
@@ -240,7 +241,7 @@ class Tablix extends React.Component {
             const mem = rh[i];
             if (mem.members) {
                 let rs = {};
-                if (i == 0) {
+                if (i == 0) {  // 实现行合并
                     rs = { 0: mem.rowSpan };
                 }
                 rwh(mem.members, rs, 0);
@@ -249,7 +250,7 @@ class Tablix extends React.Component {
                 rows.push(mem);
             }
         }
-
+        console.log('rows', rows)
         return rows;
     }
 
@@ -302,7 +303,7 @@ class Tablix extends React.Component {
      */
     renderBody() {
         const { rowGroup, data } = this.props;
-        if (!rowGroup.field) {
+        if (!rowGroup.by) {
             return null;
         }
 

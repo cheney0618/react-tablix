@@ -4,12 +4,12 @@ import Tablix from '../dist/react.tablix.js';
 
 let tp = {
     rowGroup: {
-        field: 'school',
+        by: 'school',
         group: {
-            field: 'grade',
+            by: 'grade',
             sort: (a, b) => b.gradeID - a.gradeID,
             group: {
-                field: 'schoolClass',
+                by: 'schoolClass',
             }
         }
     },
@@ -32,12 +32,12 @@ let tp = {
         },
         {
             group: {
-                field: 'gradeYear',
+                by: 'gradeYear',
                 sort: (a, b) => a.gid - b.gid,
                 columns: [
                     {
                         group: {
-                            field: 'course',
+                            by: 'course',
                             sort: (a, b) => b.cid - a.cid,
                             columns: [
                                 {
@@ -50,7 +50,7 @@ let tp = {
                                             sp.style = { color: '#f00' };
                                         }
 
-                                        return <div {...sp}>{value}</div>;
+                                        return <div {...sp}>{value.toFixed(2)}</div>;
                                     }
                                 },
                                 {
@@ -59,12 +59,20 @@ let tp = {
                                     aggregate: Tablix.AGGREGATE_TYPE.AVG,
                                     style: { color: '#00f' },
                                     className: 'center',
+                                    render:(value, rowData)=>value.toFixed(2)
                                 }
                             ],
                         }
                     },
                 ]
             },
+        },
+        {
+            group: {
+                by: 'course',
+                rowSpan: 3,
+                field: 'score',
+            }
         },
         {
             field: 'teacher',
@@ -75,7 +83,7 @@ let tp = {
     data: [
         {
             id: 1,
-            school: '沙子小学',
+            school: '我的学校',
             grade: '2019级',
             gradeID: 1,
             schoolClass: '一班',
@@ -90,7 +98,7 @@ let tp = {
         },
         {
             id: 77,
-            school: '沙子小学',
+            school: '我的学校',
             grade: '2019级',
             gradeID: 1,
             schoolClass: '一班',
@@ -105,7 +113,7 @@ let tp = {
         },
         {
             id: 2,
-            school: '沙子小学',
+            school: '我的学校',
             grade: '2019级',
             gradeID: 1,
             schoolClass: '一班',
@@ -120,7 +128,7 @@ let tp = {
         },
         {
             id: 3,
-            school: '沙子小学',
+            school: '我的学校',
             grade: '2019级',
             gradeID: 1,
             schoolClass: '一班',
@@ -135,7 +143,7 @@ let tp = {
         },
         {
             id: 4,
-            school: '沙子小学',
+            school: '我的学校',
             grade: '2019级',
             gradeID: 1,
             schoolClass: '二班',
@@ -150,7 +158,7 @@ let tp = {
         },
         {
             id: 5,
-            school: '沙子小学',
+            school: '我的学校',
             grade: '2019级',
             gradeID: 1,
             schoolClass: '二班',
@@ -165,7 +173,7 @@ let tp = {
         },
         {
             id: 6,
-            school: '沙子小学',
+            school: '我的学校',
             grade: '2018级',
             gradeID: 2,
             schoolClass: '一班',

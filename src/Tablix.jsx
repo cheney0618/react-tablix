@@ -107,7 +107,6 @@ class Tablix extends React.Component {
         }
 
         buildColSpan(ec);
-        console.log('ec', ec)
         return ec;
     }
 
@@ -142,7 +141,6 @@ class Tablix extends React.Component {
                 cols.push({...col, where: col.by ? [{ field: col.by, name: col.name }] : null});
             }
         }
-        console.log('cols', cols)
         return cols;
     }
 
@@ -204,7 +202,6 @@ class Tablix extends React.Component {
         }
 
         buildRowSpan(rows);
-        console.log('rh', rows)
         return rows;
     }
 
@@ -250,7 +247,6 @@ class Tablix extends React.Component {
                 rows.push(mem);
             }
         }
-        console.log('rows', rows)
         return rows;
     }
 

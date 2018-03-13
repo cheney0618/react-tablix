@@ -1,6 +1,6 @@
 {
   "name": "react-tablix",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "REACT TABLIX",
   "main": "dist/react.tablix.js",
   "scripts": {

@@ -59,13 +59,47 @@ let tp = {
                                     aggregate: Tablix.AGGREGATE_TYPE.AVG,
                                     style: { color: '#00f' },
                                     className: 'center',
-                                    render:(value, rowData)=>value.toFixed(2)
+                                    render: (value, rowData) => value.toFixed(2)
                                 }
                             ],
-                        }
+                        },
                     },
+
                 ]
             },
+        },
+        {
+            name: 'HAHA',
+            columns: [
+                {
+                    group: {
+                        by: 'course',
+                        rowSpan: 2,
+                        field: 'score',
+                    }
+                },
+                {
+                    name: 'TT',
+                    columns: [
+                        {
+                            field: 'std',
+                            name: '标准分',
+                            aggregate: Tablix.AGGREGATE_TYPE.AVG,
+                            style: { color: '#00f' },
+                            className: 'center',
+                            render: (value, rowData) => value.toFixed(2)
+                        },
+                        {
+                            field: 'std',
+                            name: '标准分',
+                            aggregate: Tablix.AGGREGATE_TYPE.AVG,
+                            style: { color: '#00f' },
+                            className: 'center',
+                            render: (value, rowData) => value.toFixed(2)
+                        }
+                    ]
+                }
+            ]
         },
         {
             group: {

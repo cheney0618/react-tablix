@@ -94,7 +94,8 @@ class Tablix extends React.Component {
 
         // 生成单元格合并数
         const buildColSpan = (columns) => {
-            let cc = 0;
+            // let cc = 0;
+            let cc = columns.filter(t => !t.columns).length;
             for (let i = 0; i < columns.length; i++) {
                 let col = columns[i];
                 if (col.columns) {
@@ -102,11 +103,12 @@ class Tablix extends React.Component {
                     cc += col.columns.length;
                 }
             }
-
-            return cc == 0 ? columns.length : cc;
+            return cc;
+            // return cc == 0 ? columns.length : cc;
         }
 
         buildColSpan(ec);
+        console.log('ec', ec);
         return ec;
     }
 
@@ -118,7 +120,11 @@ class Tablix extends React.Component {
             for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
                 if (col.columns) {
-                    wh(col.columns, w.concat([{ field: col.by ? col.by : col.field, name: col.name }]));
+                    let ww = [...w];
+                    if (col.field || col.by) {
+                        ww = w.concat({ field: col.by ? col.by : col.field, name: col.name });
+                    }
+                    wh(col.columns, ww);
                 }
                 else {
                     cols.push({ ...col, where: col.by ? w.concat([{ field: col.by, name: col.name }]) : w });
@@ -138,9 +144,10 @@ class Tablix extends React.Component {
                 wh(col.columns, w);
             }
             else {
-                cols.push({...col, where: col.by ? [{ field: col.by, name: col.name }] : null});
+                cols.push({ ...col, where: col.by ? [{ field: col.by, name: col.name }] : [] });
             }
         }
+        console.log('cols', cols);
         return cols;
     }
 

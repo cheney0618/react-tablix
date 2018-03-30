@@ -150,6 +150,10 @@ array
 
 ### className
 
+### transported
+
+row transport to column.
+
 
 ## Aggregate Function
 

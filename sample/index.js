@@ -5,6 +5,7 @@ import Tablix from '../dist/react.tablix.js';
 let tp = {
     rowGroup: {
         by: 'school',
+        // style: { color: '#fff', backgroundColor: '#f00' },
         group: {
             by: 'grade',
             sort: (a, b) => b.gradeID - a.gradeID,
@@ -18,6 +19,7 @@ let tp = {
             field: 'school',
             name: '学校',
             rowSpan: 3,
+            // style: { color: '#0f0' }
         },
         {
             field: 'grade',
@@ -57,7 +59,7 @@ let tp = {
                                     field: 'std',
                                     name: '标准分',
                                     aggregate: Tablix.AGGREGATE_TYPE.AVG,
-                                    style: { color: '#00f' },
+                                    // style: { color: '#00f' },
                                     className: 'center',
                                     render: (value, rowData) => value.toFixed(2)
                                 }
@@ -223,4 +225,11 @@ let tp = {
     ]
 };
 
-ReactDOM.render(<Tablix {...tp} />, document.getElementById('root'));
+ReactDOM.render(
+    <div>
+        <h3>normal</h3>
+        <Tablix {...tp} />
+        <h3>row column transported</h3>
+        <Tablix {...tp} transported />
+    </div>
+    , document.getElementById('root'));

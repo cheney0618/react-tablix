@@ -23,6 +23,7 @@ class Tablix extends React.Component {
         data: PropTypes.array.isRequired,
         style: PropTypes.object,
         className: PropTypes.string,
+        transported: PropTypes.bool,
     };
 
     /**
@@ -40,7 +41,7 @@ class Tablix extends React.Component {
                 dd = dd.sort(sort);
             }
             dd.forEach(d => {
-                let k = d[by];
+                let k = `${d[by]}`;
                 if (!gs.includes(k)) {
                     gs.push(k);
                 }
@@ -159,7 +160,7 @@ class Tablix extends React.Component {
         }
 
         const buildHierarchy = (g, wh) => {
-            const { by, group, sort } = g;
+            const { by, group, sort, style, className } = g;
             let dd = data;
             wh.forEach(w => {
                 dd = dd.filter(t => t[w.field] == w.name);
@@ -180,6 +181,8 @@ class Tablix extends React.Component {
                 let g = {
                     by,
                     name,
+                    style,
+                    className,
                     where: wh.concat([{ field: by, name }])
                 };
                 if (group) {
@@ -208,6 +211,45 @@ class Tablix extends React.Component {
 
         buildRowSpan(rows);
         return rows;
+    }
+
+    /**
+     * 获取表（从行数据转置）
+     */
+    getColumnsFromRow = () => {
+        const wh = (members, w) => {
+            for (let i = 0; i < members.length; i++) {
+                const col = members[i];
+                if (col.members) {
+                    let ww = [...w];
+                    if (col.field || col.by) {
+                        ww = w.concat({ field: col.by ? col.by : col.field, name: col.name });
+                    }
+                    wh(col.members, ww);
+                }
+                else {
+                    cols.push({ ...col, where: col.by ? w.concat([{ field: col.by, name: col.name }]) : w });
+                }
+            }
+        }
+
+        let ec = this.getRowHierarchy();
+        let cols = [];
+        for (let i = 0; i < ec.length; i++) {
+            const col = ec[i];
+            if (col.members) {
+                let w = [];
+                if (col.field || col.by) {
+                    w = [{ field: col.by ? col.by : col.field, name: col.name }];
+                }
+                wh(col.members, w);
+            }
+            else {
+                cols.push({ ...col, where: col.by ? [{ field: col.by, name: col.name }] : [] });
+            }
+        }
+        console.log('nc==>', cols);
+        return cols;
     }
 
     /**
@@ -269,6 +311,8 @@ class Tablix extends React.Component {
                 if (col.rowSpan !== 0) {
                     let thProps = {
                         key: `${uuid(8, 16)}`,
+                        style: col.style,
+                        className: col.className,
                     };
                     if (col.rowSpan > 0) {
                         thProps.rowSpan = col.rowSpan;
@@ -298,6 +342,61 @@ class Tablix extends React.Component {
 
         return <thead>{rows}</thead>;
     }
+
+    /**
+     * 显示行列转置表头
+     */
+    renderHeaderTansported() {
+        const { rowGroup, data } = this.props;
+        if (!rowGroup.by) {
+            return null;
+        }
+
+        let rowRule = this.getRowFromColumn() || [];
+
+        let cells = {};
+
+        const buildHeader = (columns, level) => {
+            let ths = [];
+            for (let i = 0; i < columns.length; i++) {
+                const col = columns[i];
+                if (col.rowSpan !== 0) {
+                    let thProps = {
+                        key: `${uuid(8, 16)}`,
+                        className: col.className,
+                        style: col.style,
+                    };
+                    if (col.rowSpan > 0) {
+                        thProps.colSpan = col.rowSpan;
+                    }
+                    if (col.colSpan > 0) {
+                        thProps.rowSpan = col.colSpan;
+                    }
+                    ths.push(<td {...thProps}>{columns[i].name}</td>);
+                }
+
+                if (col.members) {
+                    buildHeader(col.members, level + 1);
+                }
+            }
+            if (!cells.hasOwnProperty(level)) {
+                cells[level] = [];
+            }
+            cells[level] = cells[level].concat(ths);
+        }
+
+        buildHeader(this.getRowHierarchy(), 0, 0);
+
+        let rows = [];
+        for (let k in cells) {
+            let t = rowRule[k];
+            let ths = (t.cells || []).map((t, i) => <th key={i} colSpan={t.colSpan} className={t.className} style={t.style}>{t.name}</th>);
+            rows.push(<tr key={k}>{ths}{cells[k]}</tr>);
+        }
+
+        return <thead>{rows}</thead>;
+    }
+
 
     /**
      * 显示表体
@@ -386,8 +485,6 @@ class Tablix extends React.Component {
 
                 let tdProps = {
                     key: `${uuid(8, 16)}`,
-                    className: c.className,
-                    style: c.style,
                 };
 
                 if (ci < RGC - 1) {
@@ -412,13 +509,202 @@ class Tablix extends React.Component {
         return <tbody>{rows}</tbody>;
     }
 
-    render() {
-        const { style, className } = this.props;
+    /**
+     * 获取行（从列定义转置）
+     */
+    getRowFromColumn = () => {
+        let rows = [];
 
+        const rwh = (columns, rowSpan2, level, cells, w) => {
+            for (let i = 0; i < columns.length; i++) {
+                const col = columns[i];
+                const { rowSpan, colSpan, ...resetCol } = col;
+                let nas = [
+                    {
+                        rowSpan: colSpan,
+                        colSpan: rowSpan,
+                        ...resetCol,
+                    }
+                ];
+                if (i == 0) {
+                    nas = [...cells].concat(nas);
+                }
+
+                if (col.columns) {
+                    let rs = { [level + 1]: col.colSpan || 1 };
+                    if (i == 0) {
+                        rs = {
+                            ...rowSpan2,
+                            ...rs,
+                        }
+                    }
+
+                    let ww = [...w];
+                    if (col.field || col.by) {
+                        ww = w.concat({ field: col.by ? col.by : col.field, name: col.name });
+                    }
+
+                    rwh(col.columns, rs, level + 1, nas, ww);
+                }
+                else {
+                    const { colSpan, rowSpan: rsc, ...resetCol } = col;
+                    let r = { ...resetCol, cells: nas, colSpan: rsc || 1, where: col.by ? w.concat([{ field: col.by, name: col.name }]) : w };
+                    if (i == 0) {
+                        r.rowSpan2 = rowSpan2;
+                    }
+                    rows.push(r);
+                }
+            }
+        }
+
+        let rh = this.getHeaderHierarchy();
+        for (let i = 0; i < rh.length; i++) {
+            const col = rh[i];
+            const { rowSpan, colSpan, ...resetCol } = col;
+            let cells = [{
+                rowSpan: colSpan,
+                colSpan: rowSpan,
+                ...resetCol,
+            }];
+            if (col.columns) {
+                let rs = {};
+                if (i == 0) {  // 实现行合并
+                    rs = { 0: cols.colSpan || 1 };
+                }
+
+                let w = [];
+                if (col.field || col.by) {
+                    w = [{ field: col.by ? col.by : col.field, name: col.name }];
+                }
+
+                rwh(col.columns, rs, 0, cells, w);
+            }
+            else {
+                rows.push({ ...resetCol, rowSpan: colSpan, colSpan: rowSpan, cells, where: col.by ? [{ field: col.by, name: col.name }] : [] });
+            }
+        }
+        return rows;
+    }
+
+    /** 显示行列转置的表格 */
+    renderBodyTransported() {
+        const { rowGroup, data } = this.props;
+        if (!rowGroup.by) {
+            return null;
+        }
+
+        let rows = [];
+        let RGC = 1;
+        const bRGC = g => {
+            if (g.group) {
+                RGC++;
+                bRGC(g.group);
+            }
+        }
+        bRGC(rowGroup);
+
+        let rowRule = this.getRowFromColumn();
+        let columnRule = this.getColumnsFromRow();
+
+        rowRule.forEach((r, i) => {
+            if (i < RGC) {
+                return;
+            }
+
+            let tds = [];
+            let dd = data;
+            (r.where || []).forEach(w => {
+                dd = dd.filter(t => t[w.field] == w.name);
+            });
+
+            const { aggregate, field, render } = r;
+
+            columnRule.forEach((c, ci) => {
+                let ddd = dd;
+                (c.where || []).forEach(w => {
+                    ddd = ddd.filter(t => t[w.field] == w.name);
+                });
+                let content = '';
+
+                if (ddd.length > 0 && field) {
+                    let value = null;
+
+                    // 取第一个
+                    if (!aggregate || aggregate == AGGREGATE_TYPE.FIRST) {
+                        value = ddd[0][field];
+                    }
+                    if (aggregate) {
+                        // 平均值
+                        if (aggregate == AGGREGATE_TYPE.AVG) {
+                            value = ddd.map(t => t[field]).reduce((p, c) => p + c) / ddd.length;
+                        }
+                        // 求和
+                        else if (aggregate == AGGREGATE_TYPE.SUM) {
+                            value = ddd.map(t => t[field]).reduce((p, c) => p + c);
+                        }
+                        // 计数
+                        else if (aggregate == AGGREGATE_TYPE.COUNT) {
+                            value = ddd.length;
+                        }
+                        // 最大值
+                        else if (aggregate == AGGREGATE_TYPE.MAX) {
+                            value = Math.max.apply(null, ddd.map(t => t[field]));
+                        }
+                        // 最小值
+                        else if (aggregate == AGGREGATE_TYPE.MIN) {
+                            value = Math.min.apply(null, ddd.map(t => t[field]));
+                        }
+                        // 取最后一个
+                        else if (aggregate == AGGREGATE_TYPE.LAST) {
+                            value = ddd[ddd.length - 1][field];
+                        }
+                        // 取第一个
+                        else {
+                            value = ddd[0][field];
+                        }
+                    }
+
+                    if (render) {
+                        content = render(value, ddd[0]);
+                    }
+                    else {
+                        content = value;
+                    }
+
+                }
+
+                let tdProps = {
+                    key: `${uuid(8, 16)}`,
+                };
+
+                tds.push(<td {...tdProps} >{content}</td>);
+            });
+
+            let rw = r.cells.map((tt, ii) =>
+                <th key={ii}
+                    rowSpan={tt.rowSpan || 1}
+                    colSpan={tt.colSpan || 1}
+                    className={tt.className}
+                    style={tt.style}
+                >
+                    {tt.name}
+                </th>
+            );
+
+            rows.push(<tr key={i}>{rw}{tds}</tr>);
+        });
+
+        return <tbody>{rows}</tbody>;
+    }
+
+
+
+    render() {
+        const { style, className, transported } = this.props;
         return (
             <table style={style} className={`react-tablix ${className || ''}`}>
-                {this.renderHeader()}
-                {this.renderBody()}
+                {transported ? this.renderHeaderTansported() : this.renderHeader()}
+                {transported ? this.renderBodyTransported() : this.renderBody()}
             </table>
         );
     }

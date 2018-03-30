@@ -248,7 +248,6 @@ class Tablix extends React.Component {
                 cols.push({ ...col, where: col.by ? [{ field: col.by, name: col.name }] : [] });
             }
         }
-        console.log('nc==>', cols);
         return cols;
     }
 

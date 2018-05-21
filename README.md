@@ -34,6 +34,7 @@ datatype: object
 {
     by: 'field_name',
     sort: (a,b) => {},
+    filter: dataSet => { return dataSet.filter(t => t.id > 2) },
 
     // option
     group: {
@@ -45,6 +46,8 @@ datatype: object
 ### - columns
 
 datatype: array
+
+前面几列定义必须按行组顺序对应！
 
 **required**
 
@@ -63,7 +66,9 @@ datatype: array
         // top group
         group: {
             by: 'field_name',
+            name: 'Name',    // If you set the name, you will override the group values.
             sort: (a,b) => {},
+            filter: dataSet => { return dataSet.filter(t => t.id > 2) },
             columns: [
                 {
                     group: { 
@@ -77,7 +82,8 @@ datatype: array
                                 style: '',
                                 className: '',
                                 aggregate: Tablix.AGGREGATE_TYPE.AVG,
-                                render: (value, rowData) => {}
+                                render: (value, rowData) => {},
+                                hide: where => { return false; }
                             }
                         ]
                     }

@@ -5,12 +5,20 @@ import Tablix from '../dist/react.tablix.js';
 let tp = {
     rowGroup: {
         by: 'school',
+        // filter: dataSet => dataSet.filter(t => t.school != '我的学校'),
         // style: { color: '#fff', backgroundColor: '#f00' },
         group: {
             by: 'grade',
             sort: (a, b) => b.gradeID - a.gradeID,
             group: {
                 by: 'schoolClass',
+                rowStyle: w => {
+                    let k = w.find(t => t.name == '二班');
+                    if (k) {
+                        return { backgroundColor: '#f00' };
+                    }
+                    return {};
+                },
             }
         }
     },
@@ -35,7 +43,9 @@ let tp = {
         {
             group: {
                 by: 'gradeYear',
+                // name: 'GGGG',
                 sort: (a, b) => a.gid - b.gid,
+                filter: dataSet => { return dataSet.filter(t => t.gradeYear == 2017) },
                 columns: [
                     {
                         group: {
@@ -53,14 +63,25 @@ let tp = {
                                         }
 
                                         return <div {...sp}>{value.toFixed(2)}</div>;
-                                    }
+                                    },
+                                    // hide: where => {
+                                    //     let k = {};
+                                    //     where.forEach(t => {
+                                    //         k[t.field] = t.value;
+                                    //     });
+                                    //     return k['course'] == '语文';
+                                    // }
                                 },
                                 {
                                     field: 'std',
                                     name: '标准分',
                                     aggregate: Tablix.AGGREGATE_TYPE.AVG,
-                                    // style: { color: '#00f' },
+                                    // style: { color: '#00f', width: '100px' },
                                     className: 'center',
+                                    textStyle: {
+                                        color: '#f00',
+                                        textAlign: 'left'
+                                    },
                                     render: (value, rowData) => value.toFixed(2)
                                 }
                             ],
@@ -221,7 +242,37 @@ let tp = {
             teacher: '刘伟',
             gradeYear: 2017,
             gid: 1,
-        }
+        },
+        {
+            id: 7,
+            school: '他的学校',
+            grade: '2018级',
+            gradeID: 2,
+            schoolClass: '一班',
+            scID: 13,
+            course: '语文',
+            cid: 1,
+            score: 85,
+            std: 2.1,
+            teacher: '刘伟',
+            gradeYear: 2017,
+            gid: 1,
+        },
+        {
+            id: 8,
+            school: '他的学校',
+            grade: '2019级',
+            gradeID: 2,
+            schoolClass: '一班',
+            scID: 13,
+            course: '语文',
+            cid: 1,
+            score: 85,
+            std: 2.1,
+            teacher: '刘伟',
+            gradeYear: 2017,
+            gid: 1,
+        },
     ]
 };
 
@@ -230,6 +281,8 @@ ReactDOM.render(
         <h3>normal</h3>
         <Tablix {...tp} />
         <h3>row column transported</h3>
-        <Tablix {...tp} transported />
+        {
+            // <Tablix {...tp} transported />
+        }
     </div>
     , document.getElementById('root'));

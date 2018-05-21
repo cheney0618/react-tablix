@@ -33,10 +33,13 @@ class Tablix extends React.Component {
         const { columns, data } = this.props;
 
         // 生成分组头数据
-        const gc = group => {
+        const gc = (group, where) => {
             let gs = [];
-            const { by, columns, sort, ...resetGroup } = group;
+            const { by, name, columns, filter, sort, ...resetGroup } = group;
             let dd = data;
+            if (typeof filter == 'function') {
+                dd = filter(dd);
+            }
             if (typeof sort == 'function') {
                 dd = dd.sort(sort);
             }
@@ -48,31 +51,41 @@ class Tablix extends React.Component {
             });
 
             if (columns) {
-                return gs.map(name => ({
-                    name,
-                    by,
-                    columns: cc(columns),
-                    ...resetGroup
-                }));
+                return gs.map(value => {
+                    let w = where.concat({ field: by, value });
+                    return {
+                        name: name || value,
+                        value,
+                        by,
+                        where,
+                        columns: cc(columns, w),
+                        ...resetGroup
+                    };
+                });
             }
             else {
-                return gs.map(name => ({ name, by, ...resetGroup }));
+                return gs.map(value => ({ name: name || value, value, by, ...resetGroup }));
             }
         }
 
         // 生成数据列头
-        const cc = columns => {
+        const cc = (columns, where) => {
             let cols = [];
             for (let i = 0; i < columns.length; i++) {
-                let col = columns[i];
+                let col = { ...columns[i], where };
                 if (col.group) {
-                    cols = cols.concat(gc(col.group));
+                    cols = cols.concat(gc(col.group, where));
                 }
                 else if (col.columns) {
-                    cols.push({ ...col, columns: cc(col.columns) });
+                    cols.push({ ...col, columns: cc(col.columns, where) });
                 }
                 else {
-                    cols.push(col);
+                    let hided = !!col.hide;
+                    if (typeof col.hide == 'function') {
+                        hided = col.hide(where);
+                    }
+
+                    cols.push({ ...col, hided });
                 }
             }
             return cols;
@@ -85,27 +98,26 @@ class Tablix extends React.Component {
                 return;
             }
             if (col.group) {
-                ec = ec.concat(gc(col.group));
+                ec = ec.concat(gc(col.group, []));
                 return;
             }
             if (col.columns) {
-                ec.push({ ...col, columns: cc(col.columns) });
+                ec.push({ ...col, columns: cc(col.columns, []) });
             }
         });
 
         // 生成单元格合并数
         const buildColSpan = (columns) => {
             // let cc = 0;
-            let cc = columns.filter(t => !t.columns).length;
+            let cc = columns.filter(t => !t.columns && !t.hided).length;
             for (let i = 0; i < columns.length; i++) {
                 let col = columns[i];
                 if (col.columns) {
                     col.colSpan = buildColSpan(col.columns);
-                    cc += col.columns.length;
+                    cc += col.columns.filter(t => !t.hided).length;
                 }
             }
             return cc;
-            // return cc == 0 ? columns.length : cc;
         }
 
         buildColSpan(ec);
@@ -116,18 +128,14 @@ class Tablix extends React.Component {
      * 获取数据列定义
      */
     getColumns() {
-        const wh = (columns, w) => {
+        const wh = (columns) => {
             for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
                 if (col.columns) {
-                    let ww = [...w];
-                    if (col.field || col.by) {
-                        ww = w.concat({ field: col.by ? col.by : col.field, name: col.name });
-                    }
-                    wh(col.columns, ww);
+                    wh(col.columns);
                 }
                 else {
-                    cols.push({ ...col, where: col.by ? w.concat([{ field: col.by, name: col.name }]) : w });
+                    cols.push(col);
                 }
             }
         }
@@ -137,16 +145,13 @@ class Tablix extends React.Component {
         for (let i = 0; i < ec.length; i++) {
             const col = ec[i];
             if (col.columns) {
-                let w = [];
-                if (col.field || col.by) {
-                    w = [{ field: col.by ? col.by : col.field, name: col.name }];
-                }
-                wh(col.columns, w);
+                wh(col.columns);
             }
             else {
-                cols.push({ ...col, where: col.by ? [{ field: col.by, name: col.name }] : [] });
+                cols.push(col);
             }
         }
+
         return cols;
     }
 
@@ -160,8 +165,13 @@ class Tablix extends React.Component {
         }
 
         const buildHierarchy = (g, wh) => {
-            const { by, group, sort, style, className } = g;
+            const { by, group, filter, sort, style, className, rowStyle } = g;
             let dd = data;
+
+            if (typeof filter == 'function') {
+                dd = filter(dd);
+            }
+
             wh.forEach(w => {
                 dd = dd.filter(t => t[w.field] == w.name);
             });
@@ -183,6 +193,7 @@ class Tablix extends React.Component {
                     name,
                     style,
                     className,
+                    rowStyle,
                     where: wh.concat([{ field: by, name }])
                 };
                 if (group) {
@@ -283,10 +294,7 @@ class Tablix extends React.Component {
         for (let i = 0; i < rh.length; i++) {
             const mem = rh[i];
             if (mem.members) {
-                let rs = {};
-                if (i == 0) {  // 实现行合并
-                    rs = { 0: mem.rowSpan };
-                }
+                let rs = { 0: mem.rowSpan };
                 rwh(mem.members, rs, 0);
             }
             else {
@@ -307,6 +315,10 @@ class Tablix extends React.Component {
             let ths = [];
             for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
+                if (col.hided) {
+                    continue;
+                }
+
                 if (col.rowSpan !== 0) {
                     let thProps = {
                         key: `${uuid(8, 16)}`,
@@ -427,11 +439,15 @@ class Tablix extends React.Component {
             });
 
             columnRule.forEach((c, ci) => {
-                const { aggregate, field, render } = c;
+                const { aggregate, field, render, textStyle, textClassName, hided } = c;
+                if (hided) {
+                    return;
+                }
 
                 let ddd = dd;
                 (c.where || []).forEach(w => {
-                    ddd = ddd.filter(t => t[w.field] == w.name);
+                    // ddd = ddd.filter(t => t[w.field] == w.name);
+                    ddd = ddd.filter(t => t[w.field] == w.value);
                 });
                 let content = '';
 
@@ -485,6 +501,12 @@ class Tablix extends React.Component {
                 let tdProps = {
                     key: `${uuid(8, 16)}`,
                 };
+                if (textStyle) {
+                    tdProps.style = textStyle;
+                }
+                if (textClassName) {
+                    tdProps.className = textClassName;
+                }
 
                 if (ci < RGC - 1) {
                     if (r.rowSpan && r.rowSpan[ci]) {
@@ -502,7 +524,12 @@ class Tablix extends React.Component {
                 tds.push(<td {...tdProps} >{content}</td>);
             });
 
-            rows.push(<tr key={i}>{tds}</tr>);
+            let trStyle = {};
+            if (typeof r.rowStyle == 'function') {
+                trStyle = r.rowStyle(r.where);
+            }
+
+            rows.push(<tr key={i} style={trStyle}>{tds}</tr>);
         });
 
         return <tbody>{rows}</tbody>;
@@ -540,14 +567,16 @@ class Tablix extends React.Component {
 
                     let ww = [...w];
                     if (col.field || col.by) {
-                        ww = w.concat({ field: col.by ? col.by : col.field, name: col.name });
+                        // ww = w.concat({ field: col.by ? col.by : col.field, name: col.name });
+                        ww = w.concat({ field: col.by ? col.by : col.field, value: col.value });
                     }
 
                     rwh(col.columns, rs, level + 1, nas, ww);
                 }
                 else {
                     const { colSpan, rowSpan: rsc, ...resetCol } = col;
-                    let r = { ...resetCol, cells: nas, colSpan: rsc || 1, where: col.by ? w.concat([{ field: col.by, name: col.name }]) : w };
+                    // let r = { ...resetCol, cells: nas, colSpan: rsc || 1, where: col.by ? w.concat([{ field: col.by, name: col.name }]) : w };
+                    let r = { ...resetCol, cells: nas, colSpan: rsc || 1, where: col.by ? w.concat([{ field: col.by, value: col.value }]) : w };
                     if (i == 0) {
                         r.rowSpan2 = rowSpan2;
                     }
@@ -573,13 +602,15 @@ class Tablix extends React.Component {
 
                 let w = [];
                 if (col.field || col.by) {
-                    w = [{ field: col.by ? col.by : col.field, name: col.name }];
+                    // w = [{ field: col.by ? col.by : col.field, name: col.name }];
+                    w = [{ field: col.by ? col.by : col.field, value: col.value }];
                 }
 
                 rwh(col.columns, rs, 0, cells, w);
             }
             else {
-                rows.push({ ...resetCol, rowSpan: colSpan, colSpan: rowSpan, cells, where: col.by ? [{ field: col.by, name: col.name }] : [] });
+                // rows.push({ ...resetCol, rowSpan: colSpan, colSpan: rowSpan, cells, where: col.by ? [{ field: col.by, name: col.name }] : [] });
+                rows.push({ ...resetCol, rowSpan: colSpan, colSpan: rowSpan, cells, where: col.by ? [{ field: col.by, value: col.value }] : [] });
             }
         }
         return rows;
@@ -613,10 +644,11 @@ class Tablix extends React.Component {
             let tds = [];
             let dd = data;
             (r.where || []).forEach(w => {
-                dd = dd.filter(t => t[w.field] == w.name);
+                // dd = dd.filter(t => t[w.field] == w.name);
+                dd = dd.filter(t => t[w.field] == w.value);
             });
 
-            const { aggregate, field, render } = r;
+            const { aggregate, field, render, textStyle, textClassName } = r;
 
             columnRule.forEach((c, ci) => {
                 let ddd = dd;
@@ -675,6 +707,12 @@ class Tablix extends React.Component {
                 let tdProps = {
                     key: `${uuid(8, 16)}`,
                 };
+                if (textStyle) {
+                    tdProps.style = textStyle;
+                }
+                if (textClassName) {
+                    tdProps.className = textClassName;
+                }
 
                 tds.push(<td {...tdProps} >{content}</td>);
             });

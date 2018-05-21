@@ -1,13 +1,14 @@
 {
   "name": "react-tablix",
-  "version": "1.1.0",
+  "version": "1.1.7",
   "description": "REACT TABLIX",
   "main": "dist/react.tablix.js",
   "scripts": {
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development",
     "build-dev-w": "webpack --mode development -w",
-    "dev": "webpack --config webpack.config.sample.js -w --mode development"
+    "dev": "webpack --config webpack.config.sample.js -w --mode development",
+    "publish": "npm publish --registry=https://registry.npmjs.org"
   },
   "author": "Cheney Chen",
   "license": "MIT",

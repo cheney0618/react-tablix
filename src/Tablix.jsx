@@ -38,7 +38,7 @@ class Tablix extends React.Component {
             const { by, name, columns, filter, sort, ...resetGroup } = group;
             let dd = data;
             if (typeof filter == 'function') {
-                dd = filter(dd);
+                dd = filter(dd, where);
             }
             if (typeof sort == 'function') {
                 dd = dd.sort(sort);
@@ -114,8 +114,14 @@ class Tablix extends React.Component {
                 let col = columns[i];
                 if (col.columns) {
                     col.colSpan = buildColSpan(col.columns);
-                    cc += col.columns.filter(t => !t.hided).length;
+                    // cc += col.columns.filter(t => !t.hided).length;
+
                 }
+                // else {
+                //     col.colSpan = 1;
+                // }
+
+                cc += col.colSpan || 0;
             }
             return cc;
         }
@@ -165,7 +171,7 @@ class Tablix extends React.Component {
         }
 
         const buildHierarchy = (g, wh) => {
-            const { by, group, filter, sort, style, className, rowStyle } = g;
+            const { by, value, render, group, filter, sort, style, className, rowStyle } = g;
             let dd = data;
 
             if (typeof filter == 'function') {
@@ -181,21 +187,27 @@ class Tablix extends React.Component {
             }
 
             let gs = [];
+            let contents = [];
             dd.forEach(t => {
                 if (!gs.includes(t[by])) {
                     gs.push(t[by]);
+                    value && contents.push(t[value]);
                 }
             });
 
-            return gs.map(name => {
+            return gs.map((name, index) => {
                 let g = {
                     by,
                     name,
                     style,
                     className,
                     rowStyle,
+                    render,
                     where: wh.concat([{ field: by, name }])
                 };
+
+                if (value) { g.text = contents[index]; }
+
                 if (group) {
                     g.members = buildHierarchy(group, wh.concat([{ field: by, name }]));
                 }
@@ -364,13 +376,13 @@ class Tablix extends React.Component {
         }
 
         let rowRule = this.getRowFromColumn() || [];
-
         let cells = {};
 
         const buildHeader = (columns, level) => {
             let ths = [];
             for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
+
                 if (col.rowSpan !== 0) {
                     let thProps = {
                         key: `${uuid(8, 16)}`,
@@ -383,7 +395,8 @@ class Tablix extends React.Component {
                     if (col.colSpan > 0) {
                         thProps.rowSpan = col.colSpan;
                     }
-                    ths.push(<td {...thProps}>{columns[i].name}</td>);
+                    let content = columns[i].text || columns[i].name;
+                    ths.push(<td {...thProps}>{columns[i].render ? columns[i].render(content) : content}</td>);
                 }
 
                 if (col.members) {
@@ -542,6 +555,7 @@ class Tablix extends React.Component {
         let rows = [];
 
         const rwh = (columns, rowSpan2, level, cells, w) => {
+            let fucki = 0;
             for (let i = 0; i < columns.length; i++) {
                 const col = columns[i];
                 const { rowSpan, colSpan, ...resetCol } = col;
@@ -552,7 +566,8 @@ class Tablix extends React.Component {
                         ...resetCol,
                     }
                 ];
-                if (i == 0) {
+                if (fucki == 0 && !col.hided) {
+                    fucki = 1;
                     nas = [...cells].concat(nas);
                 }
 
@@ -588,6 +603,10 @@ class Tablix extends React.Component {
         let rh = this.getHeaderHierarchy();
         for (let i = 0; i < rh.length; i++) {
             const col = rh[i];
+            if (col.hided) {
+                continue;
+            }
+
             const { rowSpan, colSpan, ...resetCol } = col;
             let cells = [{
                 rowSpan: colSpan,
@@ -637,7 +656,7 @@ class Tablix extends React.Component {
         let columnRule = this.getColumnsFromRow();
 
         rowRule.forEach((r, i) => {
-            if (i < RGC) {
+            if (i < RGC || r.hided) {
                 return;
             }
 

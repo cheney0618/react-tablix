@@ -4,7 +4,9 @@ import Tablix from '../dist/react.tablix.js';
 
 let tp = {
     rowGroup: {
-        by: 'school',
+        by: 'schoolID',
+        value: 'school',
+        render: v=><span style={{color: '#f00'}}>{v}</span>,
         // filter: dataSet => dataSet.filter(t => t.school != '我的学校'),
         // style: { color: '#fff', backgroundColor: '#f00' },
         group: {
@@ -45,12 +47,25 @@ let tp = {
                 by: 'gradeYear',
                 // name: 'GGGG',
                 sort: (a, b) => a.gid - b.gid,
-                filter: dataSet => { return dataSet.filter(t => t.gradeYear == 2017) },
+                // filter: (dataSet, w) => {
+                //     let kk = [...dataSet];
+                //     return kk.filter(t => t.gradeYear == 2017);
+                // },
                 columns: [
                     {
                         group: {
                             by: 'course',
                             sort: (a, b) => b.cid - a.cid,
+                            filter: (ds, wh) => {
+                                let kk = [...ds];
+                                if (wh instanceof Array) {
+                                    wh.forEach(w => {
+                                        kk = kk.filter(t => t[w.field] == w.value);
+                                    });
+                                }
+
+                                return kk;
+                            },
                             columns: [
                                 {
                                     field: 'score',
@@ -64,13 +79,13 @@ let tp = {
 
                                         return <div {...sp}>{value.toFixed(2)}</div>;
                                     },
-                                    // hide: where => {
-                                    //     let k = {};
-                                    //     where.forEach(t => {
-                                    //         k[t.field] = t.value;
-                                    //     });
-                                    //     return k['course'] == '语文';
-                                    // }
+                                    hide: where => {
+                                        let k = {};
+                                        where.forEach(t => {
+                                            k[t.field] = t.value;
+                                        });
+                                        return k['course'] == '语文';
+                                    }
                                 },
                                 {
                                     field: 'std',
@@ -141,6 +156,7 @@ let tp = {
         {
             id: 1,
             school: '我的学校',
+            schoolID: 1,
             grade: '2019级',
             gradeID: 1,
             schoolClass: '一班',
@@ -156,6 +172,7 @@ let tp = {
         {
             id: 77,
             school: '我的学校',
+            schoolID: 1,
             grade: '2019级',
             gradeID: 1,
             schoolClass: '一班',
@@ -171,6 +188,7 @@ let tp = {
         {
             id: 2,
             school: '我的学校',
+            schoolID: 1,
             grade: '2019级',
             gradeID: 1,
             schoolClass: '一班',
@@ -186,6 +204,7 @@ let tp = {
         {
             id: 3,
             school: '我的学校',
+            schoolID: 1,
             grade: '2019级',
             gradeID: 1,
             schoolClass: '一班',
@@ -201,6 +220,7 @@ let tp = {
         {
             id: 4,
             school: '我的学校',
+            schoolID: 1,
             grade: '2019级',
             gradeID: 1,
             schoolClass: '二班',
@@ -216,6 +236,7 @@ let tp = {
         {
             id: 5,
             school: '我的学校',
+            schoolID: 1,
             grade: '2019级',
             gradeID: 1,
             schoolClass: '二班',
@@ -231,6 +252,7 @@ let tp = {
         {
             id: 6,
             school: '我的学校',
+            schoolID: 1,
             grade: '2018级',
             gradeID: 2,
             schoolClass: '一班',
@@ -246,6 +268,7 @@ let tp = {
         {
             id: 7,
             school: '他的学校',
+            schoolID: 2,
             grade: '2018级',
             gradeID: 2,
             schoolClass: '一班',
@@ -261,6 +284,7 @@ let tp = {
         {
             id: 8,
             school: '他的学校',
+            schoolID: 2,
             grade: '2019级',
             gradeID: 2,
             schoolClass: '一班',
@@ -276,13 +300,60 @@ let tp = {
     ]
 };
 
+
+let lp2 = {
+    rowGroup: {
+        by: 'rid',
+    },
+    columns: [
+        {
+            group: {
+                by: 'cid',
+                columns: [
+                    {
+                        field: 'value',
+                        name: 'value'
+                    }
+                ]
+            }
+        }
+    ],
+    data: [
+        {
+            rid: 1,
+            cid: 1,
+            value: '1-1'
+        },
+        {
+            rid: 1,
+            cid: 2,
+            value: '1-2'
+        },
+        {
+            rid: 1,
+            cid: 4,
+            value: '1-4'
+        },
+        {
+            rid: 2,
+            cid: 3,
+            value: '2-3'
+        },
+        {
+            rid: 2,
+            cid: 3,
+            value: '2-3'
+        }
+    ]
+};
+
 ReactDOM.render(
     <div>
         <h3>normal</h3>
         <Tablix {...tp} />
         <h3>row column transported</h3>
         {
-            // <Tablix {...tp} transported />
+            <Tablix {...tp} transported />
         }
     </div>
     , document.getElementById('root'));
